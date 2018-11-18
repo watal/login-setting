@@ -1,0 +1,8 @@
+download_folder: C:/tools
+download_folder_bs: C:\tools
+cygwin_setup_exe: "{{ download_folder }}/setup-x86_64.exe"
+cygwin_root: "{{ download_folder }}/cygwin64"
+cygwin_packages_folder: "{{ download_folder }}/cygwin64packages"
+cygwin_remote_site: ftp://ftp.iij.ad.jp/pub/cygwin
+sshd_service_name: sshd
+ssh_firewall_name: SSH

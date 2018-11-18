@@ -1,0 +1,56 @@
+---
+- name: mkdir .ssh
+  file:
+    dest: "/home/{{ item.name }}/.ssh/"
+    state: directory
+    owner:  
+    group:  "{{ item.name }}"
+    mode: 700
+  with_items: users
+  tags: ssh
+
+- name: send authorized keys
+  copy:
+    src: "{{ publickey }}"
+    dest: "/home/{{ item.name }}/.ssh/authorized_keys"
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
+    mode: 0600
+  with_items: users
+  tags: ssh
+
+- name: disable PasswordAuthentication
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^PasswordAuthentication"
+    insertafter: "^#PasswordAuthentication"
+    line: "PasswordAuthentication no"
+  notify: restart sshd
+  tags: ssh
+
+- name: disable ChallengeResponse
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^ChallengeResponseAuthentication"
+    insertafter: "^#ChallengeResponseAuthentication"
+    line: "ChallengeResponseAuthentication no"
+  notify: restart sshd
+  tags: ssh
+
+- name: disable RootLogin
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^PermitRootLogin"
+    insertafter: "^#PermitRootLogin"
+    line: "PermitRootLogin no"
+  notify: restart sshd
+  tags: ssh
+
+- name: change ssh post
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^Port"
+    insertafter: "^#Port"
+    line: "Port {{ sshd_port }}"
+  notify: restart sshd
+  tags: firewall

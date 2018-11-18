@@ -1,0 +1,5 @@
+---
+- hosts: before
+  become: yes
+  roles:
+    - change_passwd

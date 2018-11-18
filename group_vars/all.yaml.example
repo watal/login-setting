@@ -1,0 +1,6 @@
+---
+users:
+  - { name: newuser1, password: hogehoge, groups: wheel}
+  - { name: newuser2, password: fugafuga, groups: wheel}
+publickey: sample.pub
+sshd_port: 22

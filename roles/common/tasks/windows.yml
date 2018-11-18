@@ -1,0 +1,92 @@
+---
+- name: exists tools folder
+  win_stat:
+    path: "{{ download_folder }}"
+  register: folder_info
+
+- name: make tools folder
+  raw: "mkdir {{ download_folder_bs }}"
+  when: not folder_info.stat.exists
+
+- name: exists cygwin installer
+  win_stat:
+    path: "{{ cygwin_setup_exe }}"
+  register: file_info
+
+- name: download cygwin installer
+  win_get_url:
+    url: "http://cygwin.com/setup-x86_64.exe"
+    dest: "{{ cygwin_setup_exe }}"
+  when: not file_info.stat.exists
+
+- name: install cygwin and openssh
+  raw: "{{ cygwin_setup_exe }} -R {{ cygwin_root }} -l {{ cygwin_packages_folder }} -q -s {{ cygwin_remote_site }} -P openssh"
+
+- name: exists sshd service
+  raw: 'sc query | findstr /C:"SERVICE_NAME: {{ sshd_service_name }}"'
+  register: service_info
+  failed_when: False
+
+- name: registration sshd service
+  raw: '{{ cygwin_root }}/bin/bash --login -c "/bin/ssh-host-config -y -c ntsec -u sshd_account -w {{ ansible_ssh_pass }}"'
+  when: '"{{ sshd_service_name }}" not in service_info.stdout'
+
+- name: start sshd service
+  win_service:
+    name: "{{ sshd_service_name }}"
+    state: started
+
+- name: check ssh port
+  raw: "netsh advfirewall firewall show rule name={{ ssh_firewall_name }}"
+  register: firewall_info
+  failed_when: False
+
+- name: open ssh port
+  raw: 'netsh advfirewall firewall add rule Profile=private name="{{ ssh_firewall_name }}" dir=in localport=22 protocol=TCP action=allow'
+  when: '"{{ ssh_firewall_name }}" not in firewall_info.stdout'
+
+- name: install python package
+  raw: "{{ cygwin_setup_exe }} -R {{ cygwin_root }} -l {{ cygwin_packages_folder }} -q -s {{ cygwin_remote_site }} -P python"
+
+- name: send authorized keys
+  win_copy:
+    src: "{{ publickey }}"
+    dest: C:\Users\"{{ item.name }}"\.ssh\authorized_keys
+  with_items: users
+  tags: ssh
+
+- name: disable PasswordAuthentication
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^PasswordAuthentication"
+    insertafter: "^#PasswordAuthentication"
+    line: "PasswordAuthentication no"
+  notify: restart sshd
+  tags: ssh
+
+- name: disable ChallengeResponse
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^ChallengeResponseAuthentication"
+    insertafter: "^#ChallengeResponseAuthentication"
+    line: "ChallengeResponseAuthentication no"
+  notify: restart sshd
+  tags: ssh
+
+- name: disable RootLogin
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^PermitRootLogin"
+    insertafter: "^#PermitRootLogin"
+    line: "PermitRootLogin no"
+  notify: restart sshd
+  tags: ssh
+
+- name: change ssh post
+  lineinfile:
+    dest: /etc/ssh/sshd_config
+    regexp: "^Port"
+    insertafter: "^#Port"
+    line: "Port {{ sshd_port }}"
+  notify: restart sshd
+  tags: firewall

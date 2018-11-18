@@ -1,0 +1,12 @@
+---
+- include: debian.yml
+  when: ansible_os_family == "Debian"
+
+- include: redhat.yml
+  when: ansible_os_family == "RedHat"
+
+- include: freebsd.yml
+  when: ansible_os_family == "FreeBSD"
+
+- include: windows.yml
+  when: ansible_os_family == "Windows"

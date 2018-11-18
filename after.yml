@@ -1,0 +1,5 @@
+---
+- hosts: after
+  become: yes
+  roles:
+    - { role: change_passwd, when: target != "firewall" }

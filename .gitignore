@@ -1,0 +1,14 @@
+# Created by https://www.gitignore.io/api/ansible
+# Edit at https://www.gitignore.io/?templates=ansible
+
+### Ansible ###
+*.retry
+
+# End of https://www.gitignore.io/api/ansible
+
+hosts
+group_vars/all.yaml
+roles/common/files/*
+roles/change_sshd_port/files/*
+!.gitkeep
+ssh_config

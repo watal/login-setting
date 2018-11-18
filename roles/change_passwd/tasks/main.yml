@@ -1,0 +1,20 @@
+---
+- name: change the password
+  user:
+    name: "{{ item.name }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+  with_items: users
+  tags: users
+  when:
+    - ansible_os_family != "Windows"
+
+- name: change the password (Windows)
+  win_user:
+    name: "{{ item.name }}"
+    password: "{{ item.password | password_hash('sha512') }}"
+    groups: Users
+    state: present
+  with_items: users
+  tags: users
+  when:
+    - ansible_os_family == "Windows"
